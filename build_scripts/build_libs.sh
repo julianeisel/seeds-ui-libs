@@ -42,21 +42,24 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF
 cmake --build build --config Release
 cd ..
 
+if [[ "$PLATFORM" == "windows"* ]]; then
+    # Convert to Windows absolute paths (C:/... style)
+    FREETYPE_INCLUDE=$(cygpath -m "$(pwd)/freetype/include")
+    HARFBUZZ_INCLUDE=$(cygpath -m "$(pwd)/harfbuzz/src")
+    FREETYPE_LIB=$(cygpath -m "$(pwd)/freetype/build/Release/freetype.lib")
+    HARFBUZZ_LIB=$(cygpath -m "$(pwd)/harfbuzz/build/Release/harfbuzz.lib")
+else
+    FREETYPE_INCLUDE="$(pwd)/freetype/include"
+    HARFBUZZ_INCLUDE="$(pwd)/harfbuzz/src"
+    FREETYPE_LIB="$(pwd)/freetype/build/libfreetype.a"
+    HARFBUZZ_LIB="$(pwd)/harfbuzz/build/libharfbuzz.a"
+fi
+
 # --- Build HarfBuzz ---
 if [ ! -d "harfbuzz" ]; then
     git clone --branch ${HARFBUZZ_VERSION_TAG} --depth=1 https://github.com/harfbuzz/harfbuzz.git
 fi
 cd harfbuzz
-
-FREETYPE_INCLUDE="$(pwd)/../freetype/include"
-HARFBUZZ_INCLUDE="$(pwd)/../harfbuzz/src"
-if [[ "$PLATFORM" == "windows"* ]]; then
-    FREETYPE_LIB="$(pwd)/../freetype/build/Release/freetype.lib"
-    HARFBUZZ_LIB="$(pwd)/../harfbuzz/build/Release/harfbuzz.lib"
-else
-    FREETYPE_LIB="$(pwd)/../freetype/build/libfreetype.a"
-    HARFBUZZ_LIB="$(pwd)/../harfbuzz/build/libharfbuzz.a"
-fi
 
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
       -DHB_HAVE_FREETYPE=ON  \
@@ -97,7 +100,7 @@ skia_use_system_libjpeg_turbo=false
 skia_use_system_libwebp=false
 skia_use_system_icu=false
 skia_enable_fontmgr_android=false
-extra_cflags=[\"-I$FREETYPE_INCLUDE\",\"-I$FREETYPE_INCLUDE/freetype\",\"-I$HARFBUZZ_INCLUDE\"]
+extra_cflags=[\"-I$FREETYPE_INCLUDE\",\"-I$HARFBUZZ_INCLUDE\"]
 extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
 bin/gn gen out/Release --args="$SKIA_ARGS"
