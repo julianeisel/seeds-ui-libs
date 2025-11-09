@@ -82,6 +82,12 @@ skia_use_gl=true
 skia_enable_tools=false
 skia_use_freetype=true
 skia_use_harfbuzz=true
+skia_use_zlib=true
+skia_use_system_libpng=false
+skia_enable_pdf=false
+skia_use_system_libjpeg_turbo=false
+skia_use_system_libwebp=false
+skia_use_system_icu=false
 extra_cflags=[\"-I$(pwd)/../freetype/include\",\"-I$(pwd)/../harfbuzz/src\"]
 extra_ldflags=[\"-L$(pwd)/../freetype/build\",\"-L$(pwd)/../harfbuzz/build\"]"
 
