@@ -28,11 +28,11 @@ jobs:
         run: |
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             sudo apt-get update
-            sudo apt-get install -y python3 ninja-build clang cmake git pkg-config libgl1-mesa-dev libfontconfig1-dev
+            sudo apt-get install -y python3 ninja-build clang cmake pkg-config libgl1-mesa-dev libfontconfig1-dev
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            brew install ninja cmake python3 git pkg-config
+            brew install ninja cmake python3 pkg-config
           else
-            choco install ninja cmake python git
+            choco install ninja cmake python
           fi
 
       - name: Build libraries
@@ -52,7 +52,7 @@ jobs:
           cat SHA256SUMS.txt
         continue-on-error: true
 
-      - name: Generate SHA256 checksums (Windows)
+      - name: Generate checksums (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
