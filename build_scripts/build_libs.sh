@@ -47,8 +47,18 @@ if [ ! -d "harfbuzz" ]; then
     git clone --branch ${HARFBUZZ_VERSION_TAG} --depth=1 https://github.com/harfbuzz/harfbuzz.git
 fi
 cd harfbuzz
+
+# Resolve FreeType library path (platform-dependent)
+if [[ "$PLATFORM" == windows-* ]]; then
+    FREETYPE_LIB_PATH="$(realpath ../freetype/build/Release/freetype.lib)"
+else
+    FREETYPE_LIB_PATH="$(realpath ../freetype/build/libfreetype.a)"
+fi
+
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
-      -DHB_HAVE_FREETYPE=ON -DFREETYPE_INCLUDE_DIRS=../freetype/include
+      -DHB_HAVE_FREETYPE=ON  \
+      -DFREETYPE_INCLUDE_DIRS=../freetype/include \
+      -DFREETYPE_LIBRARY="${FREETYPE_LIB_PATH}"
 cmake --build build --config Release
 cd ..
 
