@@ -80,6 +80,8 @@ echo "FREETYPE_INCLUDE/..:"
 ls $FREETYPE_INCLUDE/..
 echo "FREETYPE_INCLUDE:"
 ls $FREETYPE_INCLUDE
+echo "subdir:"
+ls $FREETYPE_INCLUDE/freetype
 
 SKIA_ARGS="
 is_official_build=true
@@ -95,7 +97,7 @@ skia_use_system_libjpeg_turbo=false
 skia_use_system_libwebp=false
 skia_use_system_icu=false
 skia_enable_fontmgr_android=false
-extra_cflags=[\"-I$FREETYPE_INCLUDE\",\"-I$HARFBUZZ_INCLUDE\"]
+extra_cflags=[\"-I$FREETYPE_INCLUDE\",\"-I$FREETYPE_INCLUDE/freetype\",\"-I$HARFBUZZ_INCLUDE\"]
 extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
 bin/gn gen out/Release --args="$SKIA_ARGS"
