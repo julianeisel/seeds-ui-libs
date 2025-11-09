@@ -48,17 +48,20 @@ if [ ! -d "harfbuzz" ]; then
 fi
 cd harfbuzz
 
-# Resolve FreeType library path (platform-dependent)
-if [[ "$PLATFORM" == windows-* ]]; then
-    FREETYPE_LIB_PATH="$(realpath ../freetype/build/Release/freetype.lib)"
+FREETYPE_INCLUDE="$(pwd)/../freetype/include"
+HARFBUZZ_INCLUDE="$(pwd)/../harfbuzz/src"
+if [[ "$PLATFORM" == "windows"* ]]; then
+    FREETYPE_LIB="$(pwd)/../freetype/build/Release/freetype.lib"
+    HARFBUZZ_LIB="$(pwd)/../harfbuzz/build/Release/harfbuzz.lib"
 else
-    FREETYPE_LIB_PATH="$(realpath ../freetype/build/libfreetype.a)"
+    FREETYPE_LIB="$(pwd)/../freetype/build/libfreetype.a"
+    HARFBUZZ_LIB="$(pwd)/../harfbuzz/build/libharfbuzz.a"
 fi
 
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
       -DHB_HAVE_FREETYPE=ON  \
-      -DFREETYPE_INCLUDE_DIRS=../freetype/include \
-      -DFREETYPE_LIBRARY="${FREETYPE_LIB_PATH}"
+      -DFREETYPE_INCLUDE_DIRS=${FREETYPE_INCLUDE} \
+      -DFREETYPE_LIBRARY="${FREETYPE_LIB}"
 cmake --build build --config Release
 cd ..
 
@@ -66,26 +69,17 @@ cd ..
 if [ ! -d "skia" ]; then
     git clone https://github.com/google/skia.git
     cd skia
-    git checkout ${SKIA_VERSION_TAG}
-    python3 tools/git-sync-deps
 else
     cd skia
     git fetch origin ${SKIA_VERSION_TAG}
-    git checkout ${SKIA_VERSION_TAG}
-    python3 tools/git-sync-deps
 fi
+git checkout ${SKIA_VERSION_TAG}
+python3 tools/git-sync-deps
 
-if [[ "$PLATFORM" == "windows"* ]]; then
-    FREETYPE_INCLUDE="$(pwd)/../freetype/include"
-    FREETYPE_LIB="$(pwd)/../freetype/build/Release/freetype.lib"
-    HARFBUZZ_INCLUDE="$(pwd)/../harfbuzz/src"
-    HARFBUZZ_LIB="$(pwd)/../harfbuzz/build/Release/harfbuzz.lib"
-else
-    FREETYPE_INCLUDE="$(pwd)/../freetype/include"
-    FREETYPE_LIB="$(pwd)/../freetype/build/libfreetype.a"
-    HARFBUZZ_INCLUDE="$(pwd)/../harfbuzz/src"
-    HARFBUZZ_LIB="$(pwd)/../harfbuzz/build/libharfbuzz.a"
-fi
+echo "FREETYPE_INCLUDE/..:"
+ls $FREETYPE_INCLUDE/..
+echo "FREETYPE_INCLUDE:"
+ls $FREETYPE_INCLUDE
 
 SKIA_ARGS="
 is_official_build=true
@@ -100,6 +94,7 @@ skia_enable_pdf=false
 skia_use_system_libjpeg_turbo=false
 skia_use_system_libwebp=false
 skia_use_system_icu=false
+skia_enable_fontmgr_android=false
 extra_cflags=[\"-I$FREETYPE_INCLUDE\",\"-I$HARFBUZZ_INCLUDE\"]
 extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
