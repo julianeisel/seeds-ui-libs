@@ -75,6 +75,18 @@ else
     python3 tools/git-sync-deps
 fi
 
+if [[ "$PLATFORM" == "windows"* ]]; then
+    FREETYPE_INCLUDE="$(pwd)/../freetype/include"
+    FREETYPE_LIB="$(pwd)/../freetype/build/Release/freetype.lib"
+    HARFBUZZ_INCLUDE="$(pwd)/../harfbuzz/src"
+    HARFBUZZ_LIB="$(pwd)/../harfbuzz/build/Release/harfbuzz.lib"
+else
+    FREETYPE_INCLUDE="$(pwd)/../freetype/include"
+    FREETYPE_LIB="$(pwd)/../freetype/build/libfreetype.a"
+    HARFBUZZ_INCLUDE="$(pwd)/../harfbuzz/src"
+    HARFBUZZ_LIB="$(pwd)/../harfbuzz/build/libharfbuzz.a"
+fi
+
 SKIA_ARGS="
 is_official_build=true
 is_component_build=false
@@ -88,8 +100,8 @@ skia_enable_pdf=false
 skia_use_system_libjpeg_turbo=false
 skia_use_system_libwebp=false
 skia_use_system_icu=false
-extra_cflags=[\"-I$(pwd)/../freetype/include\",\"-I$(pwd)/../harfbuzz/src\"]
-extra_ldflags=[\"-L$(pwd)/../freetype/build\",\"-L$(pwd)/../harfbuzz/build\"]"
+extra_cflags=[\"-I$FREETYPE_INCLUDE\",\"-I$HARFBUZZ_INCLUDE\"]
+extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
 bin/gn gen out/Release --args="$SKIA_ARGS"
 ninja -C out/Release
