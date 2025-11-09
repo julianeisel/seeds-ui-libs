@@ -25,7 +25,7 @@ case "$(uname -s)" in
     *) echo "Unsupported OS"; exit 1;;
 esac
 
-echo "=== Building Skia libraries for ${PLATFORM} ==="
+echo "=== Building libraries for ${PLATFORM} ==="
 echo "Using:"
 echo "  Skia: ${SKIA_VERSION_TAG}"
 echo "  FreeType: ${FREETYPE_VERSION_TAG}"
@@ -75,7 +75,16 @@ else
     python3 tools/git-sync-deps
 fi
 
-SKIA_ARGS='is_official_build=true is_component_build=false skia_use_gl=true skia_enable_tools=false skia_use_freetype=true skia_use_harfbuzz=true'
+SKIA_ARGS="
+is_official_build=true
+is_component_build=false
+skia_use_gl=true
+skia_enable_tools=false
+skia_use_freetype=true
+skia_use_harfbuzz=true
+extra_cflags=[\"-I$(pwd)/../freetype/include\",\"-I$(pwd)/../harfbuzz/src\"]
+extra_ldflags=[\"-L$(pwd)/../freetype/build\",\"-L$(pwd)/../harfbuzz/build\"]"
+
 bin/gn gen out/Release --args="$SKIA_ARGS"
 ninja -C out/Release
 cd ../..
