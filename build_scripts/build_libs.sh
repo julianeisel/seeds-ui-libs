@@ -100,7 +100,12 @@ skia_use_system_libjpeg_turbo=false
 skia_use_system_libwebp=false
 skia_use_system_icu=false
 skia_enable_fontmgr_android=false
-extra_cflags=[\"-I$FREETYPE_INCLUDE\",\"-I$HARFBUZZ_INCLUDE\"]
+extra_cflags=[
+  \"-DSK_FREETYPE_STATIC\",
+  \"-DSK_BUILD_FOR_WIN\",
+  \"-I$FREETYPE_INCLUDE\",
+  \"-I$HARFBUZZ_INCLUDE\"
+]
 extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
 bin/gn gen out/Release --args="$SKIA_ARGS"
