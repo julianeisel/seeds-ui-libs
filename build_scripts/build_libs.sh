@@ -12,20 +12,22 @@ HARFBUZZ_VERSION_TAG="12.0.0"
 
 # Detect platform
 case "$(uname -s)" in
-    Linux*)   PLATFORM="linux-x64";;
-    Darwin*)
-        ARCH=$(uname -m)
-        if [ "$ARCH" = "arm64" ]; then
-            PLATFORM="macos-arm64"
-        else
-            PLATFORM="macos-x64"
-        fi
-        ;;
-    MINGW*|MSYS*|CYGWIN*) PLATFORM="windows-x64";;
-    *) echo "Unsupported OS"; exit 1;;
+    Linux*)   PLATFORM="linux" ;;
+    Darwin*)  PLATFORM="mac" ;;
+    MINGW*|MSYS*|CYGWIN*) PLATFORM="win" ;;
 esac
 
-echo "=== Building libraries for ${PLATFORM} ==="
+# Detect architecture
+ARCH_FULLNAME="$(uname -m)"
+case "$ARCH_FULLNAME" in
+    x86_64)   ARCH="x64" ;;
+    arm64|aarch64) ARCH="arm64" ;;
+    *)        ARCH="x64" ;;
+esac
+
+PLATFORM_FULLNAME="${PLATFORM}-$ARCH"
+
+echo "=== Building libraries for ${PLATFORM_FULLNAME} ==="
 echo "Using:"
 echo "  Skia: ${SKIA_VERSION_TAG}"
 echo "  FreeType: ${FREETYPE_VERSION_TAG}"
@@ -42,7 +44,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF
 cmake --build build --config Release
 cd ..
 
-if [[ "$PLATFORM" == "windows"* ]]; then
+if [[ "$PLATFORM" == "win" ]]; then
     # Convert to Windows absolute paths (C:/... style)
     FREETYPE_INCLUDE=$(cygpath -m "$(pwd)/freetype/include")
     HARFBUZZ_INCLUDE=$(cygpath -m "$(pwd)/harfbuzz/src")
@@ -79,7 +81,7 @@ fi
 git checkout ${SKIA_VERSION_TAG}
 python3 tools/git-sync-deps
 
-if [[ "$PLATFORM" == "windows"* ]]; then
+if [[ "$PLATFORM" == "win" ]]; then
     EXTRA_CFLAGS="[
         \"-DSK_FREETYPE_STATIC\",
         \"-DSK_BUILD_FOR_WIN\",
@@ -107,6 +109,8 @@ skia_use_system_libjpeg_turbo=false
 skia_use_system_libwebp=false
 skia_use_system_icu=false
 skia_enable_fontmgr_android=false
+target_os=\"${PLATFORM}\"
+target_cpu=\"${ARCH}\"
 extra_cflags=$EXTRA_CFLAGS
 extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
@@ -115,7 +119,7 @@ ninja -C out/Release
 cd ../..
 
 # --- Package ---
-PKG_DIR="artifacts/seeds-ui-libs-${PLATFORM}"
+PKG_DIR="artifacts/seeds-ui-libs-${PLATFORM_FULLNAME}"
 rm -rf "${PKG_DIR}"
 mkdir -p "${PKG_DIR}/lib"
 mkdir -p "${PKG_DIR}/include"
@@ -131,11 +135,11 @@ find deps/freetype/build -name "libfreetype.*" -or -name "freetype.lib" -exec cp
 find deps/harfbuzz/build -name "libharfbuzz.*" -or -name "harfbuzz.lib" -exec cp {} "${PKG_DIR}/lib/" \;
 
 # Compress
-if [[ "$PLATFORM" == windows-* ]]; then
-    7z a seeds-ui-libs-${PLATFORM}.zip ${PKG_DIR}/*
+if [[ "$PLATFORM" == "win" ]]; then
+    7z a seeds-ui-libs-${PLATFORM_FULLNAME}.zip ${PKG_DIR}/*
 else
-    tar -czf seeds-ui-libs-${PLATFORM}.tar.gz -C artifacts seeds-ui-libs-${PLATFORM}
+    tar -czf seeds-ui-libs-${PLATFORM_FULLNAME}.tar.gz -C artifacts seeds-ui-libs-${PLATFORM_FULLNAME}
 fi
 
-echo "Build complete: seeds-ui-libs-${PLATFORM}"
+echo "Build complete: seeds-ui-libs-${PLATFORM_FULLNAME}"
 
