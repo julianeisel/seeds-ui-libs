@@ -46,7 +46,9 @@ jobs:
         run: |
           cd artifacts
           for f in seeds-ui-libs-*; do
-            shasum -a 256 "$f" >> SHA256SUMS.txt
+            if [ -f "$f" ]; then
+              shasum -a 256 "$f" >> SHA256SUMS.txt
+            fi
           done
           cat SHA256SUMS.txt
         continue-on-error: true
@@ -91,4 +93,5 @@ jobs:
         run: |
           cd release_artifacts
           cat */SHA256SUMS.txt > SHA256SUMS.txt
-          echo "Final SHA256
+          echo "Final SHA256SUMS.txt:"
+          cat SHA
