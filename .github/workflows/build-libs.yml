@@ -17,7 +17,6 @@ jobs:
           - { os: ubuntu-latest, label: linux-x64 }
           - { os: macos-13, label: macos-x64 }
           - { os: macos-14, label: macos-arm64 }
-          - { os: windows-latest, label: windows-x64 }
 
     steps:
       - name: Checkout repository
