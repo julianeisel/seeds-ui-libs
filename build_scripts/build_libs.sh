@@ -136,9 +136,9 @@ find deps/harfbuzz/build -name "libharfbuzz.*" -or -name "harfbuzz.lib" -exec cp
 
 # Compress
 if [[ "$PLATFORM" == "win" ]]; then
-    7z a seeds-ui-libs-${PLATFORM_FULLNAME}.zip ${PKG_DIR}/*
+    7z a ${PKG_DIR}.zip ${PKG_DIR}/*
 else
-    tar -czf seeds-ui-libs-${PLATFORM_FULLNAME}.tar.gz -C artifacts seeds-ui-libs-${PLATFORM_FULLNAME}
+    tar -czf ${PKG_DIR}.tar.gz -C artifacts seeds-ui-libs-${PLATFORM_FULLNAME}
 fi
 
 echo "Build complete: seeds-ui-libs-${PLATFORM_FULLNAME}"
