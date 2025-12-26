@@ -47,7 +47,7 @@ jobs:
           cd artifacts
           find seeds-ui-libs-* -type f | while read file; do
             if [ -f "$file" ]; then
-              shasum -a 256 "$f" >> SHA256SUMS.txt
+              shasum -a 256 "$file" >> SHA256SUMS.txt
             fi
           done
           cat SHA256SUMS.txt
