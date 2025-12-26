@@ -40,13 +40,13 @@ jobs:
           chmod +x build_scripts/build_libs.sh
           ./build_scripts/build_libs.sh
 
-      - name: Generate checksums
+      - name: Generate checksums (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           cd artifacts
-          for f in seeds-ui-libs-*; do
-            if [ -f "$f" ]; then
+          find seeds-ui-libs-* -type f | while read file; do
+            if [ -f "$file" ]; then
               shasum -a 256 "$f" >> SHA256SUMS.txt
             fi
           done
@@ -94,4 +94,22 @@ jobs:
           cd release_artifacts
           cat */SHA256SUMS.txt > SHA256SUMS.txt
           echo "Final SHA256SUMS.txt:"
-          cat SHA
+          cat SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: "SeedsUI Prebuilt Libraries ${{ github.event.inputs.version }}"
+          body: |
+            Automated prebuilt Skia + FreeType + HarfBuzz bundles for:
+            - Linux (x64)
+            - macOS (x64 & arm64)
+            - Windows (x64)
+          files: |
+            release_artifacts/**/seeds-ui-libs-*.tar.gz
+            release_artifacts/**/seeds-ui-libs-*.zip
+            release_artifacts/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
