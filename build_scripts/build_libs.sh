@@ -126,9 +126,13 @@ PKG_DIR="artifacts/seeds-ui-libs-${PLATFORM_FULLNAME}"
 rm -rf "${PKG_DIR}"
 mkdir -p "${PKG_DIR}/lib"
 mkdir -p "${PKG_DIR}/include"
+mkdir -p "${PKG_DIR}/skia"
 
 # Copy includes
 cp -r deps/skia/include "${PKG_DIR}/include/skia"
+# Skia does includes like `#include "include/core/SkFoo.h"`. Within SeedsUI it's better to keep it
+# as "skia/core/SkFoo.h", so just copy the directories to two locations.
+cp -r deps/skia/include "${PKG_DIR}/skia/include"
 cp -r deps/freetype/include "${PKG_DIR}/include/freetype2"
 cp -r deps/harfbuzz/src "${PKG_DIR}/include/harfbuzz"
 

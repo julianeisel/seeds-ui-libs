@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag for release (e.g. 0.1)'
+        description: 'Version tag for release (e.g. 0.1.1)'
         required: true
 
 jobs:
