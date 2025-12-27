@@ -64,7 +64,9 @@ fi
 cd harfbuzz
 
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
-      -DHB_HAVE_FREETYPE=ON  \
+      -DCMAKE_CXX_STANDARD=20 \
+      -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+      -DHB_HAVE_FREETYPE=ON \
       -DFREETYPE_INCLUDE_DIRS=${FREETYPE_INCLUDE} \
       -DFREETYPE_LIBRARY="${FREETYPE_LIB}"
 cmake --build build --config Release
@@ -112,6 +114,7 @@ skia_enable_fontmgr_android=false
 target_os=\"${PLATFORM}\"
 target_cpu=\"${ARCH}\"
 extra_cflags=$EXTRA_CFLAGS
+extra_cflags_cc=[\"-std=c++20\"]
 extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
 bin/gn gen out/Release --args="$SKIA_ARGS"
