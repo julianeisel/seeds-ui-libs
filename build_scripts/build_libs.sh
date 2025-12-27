@@ -133,9 +133,9 @@ cp -r deps/freetype/include "${PKG_DIR}/include/freetype2"
 cp -r deps/harfbuzz/src "${PKG_DIR}/include/harfbuzz"
 
 # Copy libs
-find deps/skia/out/Release -name "libskia.*" -or -name "skia.lib" -exec cp {} "${PKG_DIR}/lib/" \;
-find deps/freetype/build -name "libfreetype.*" -or -name "freetype.lib" -exec cp {} "${PKG_DIR}/lib/" \;
-find deps/harfbuzz/build -name "libharfbuzz.*" -or -name "harfbuzz.lib" -exec cp {} "${PKG_DIR}/lib/" \;
+find deps/skia/out/Release \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
+find deps/freetype/build \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
+find deps/harfbuzz/build \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
 
 # Compress
 if [[ "$PLATFORM" == "win" ]]; then
@@ -145,4 +145,3 @@ else
 fi
 
 echo "Build complete: seeds-ui-libs-${PLATFORM_FULLNAME}"
-
