@@ -1,0 +1,9 @@
+# Ignore dot files by default
+.*
+
+# OS stuff
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+/deps/
