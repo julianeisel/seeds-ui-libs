@@ -100,7 +100,7 @@ cd ..
 
 # --- Build Skia ---
 echo "- Pulling & Building Skia..."
-
+if [ ! -d "skia" ]; then
     git clone https://github.com/google/skia.git
     cd skia
 else
