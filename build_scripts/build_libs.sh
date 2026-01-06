@@ -61,7 +61,7 @@ if [ ! -d "brotli" ]; then
   git clone --branch ${BROTLI_VERSION_TAG} --depth=1 https://github.com/google/brotli.git
 fi
 cd brotli
-cmake -B out -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=./out/installed
+cmake -B out -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=./out/installed -DCMAKE_INSTALL_LIBDIR=lib
 cmake --build out --config Release --target install
 echo "- Finished building Brotli"
 cd ..
@@ -126,30 +126,30 @@ else
 fi
 
 SKIA_ARGS="
-is_official_build=true
-is_component_build=false
-skia_use_gl=true
-skia_enable_tools=false
-skia_use_freetype=true
-skia_use_harfbuzz=true
-skia_use_zlib=true
-skia_use_system_libpng=false
-skia_enable_pdf=false
-skia_use_system_libjpeg_turbo=false
-skia_use_system_libwebp=false
-skia_use_system_icu=false
-skia_enable_fontmgr_android=false
-target_os=\"${PLATFORM}\"
-target_cpu=\"${ARCH}\"
-extra_cflags=$EXTRA_CFLAGS
-extra_cflags_cc=[\"-std=c++20\"]
-extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
+  is_official_build=true
+  is_component_build=false
+  skia_use_gl=true
+  skia_enable_tools=false
+  skia_use_freetype=true
+  skia_use_harfbuzz=true
+  skia_use_zlib=true
+  skia_use_system_libpng=false
+  skia_enable_pdf=false
+  skia_use_system_libjpeg_turbo=false
+  skia_use_system_libwebp=false
+  skia_use_system_icu=false
+  skia_enable_fontmgr_android=false
+  target_os=\"${PLATFORM}\"
+  target_cpu=\"${ARCH}\"
+  extra_cflags=$EXTRA_CFLAGS
+  extra_cflags_cc=[\"-std=c++20\"]
+  extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
 
 if [[ "$PLATFORM" == "linux" ]]; then
   SKIA_ARGS+="
-skia_use_egl=true
-skia_use_x11=true
+  skia_use_egl=true
+  skia_use_x11=true
   "
 fi
 
@@ -184,15 +184,10 @@ rsync -a  \
 cp -r deps/freetype/include "${PKG_DIR}/include/freetype2"
 cp -r deps/harfbuzz/src "${PKG_DIR}/include/harfbuzz"
 
-LIB_SUFFIX=""
-# On Linux x64, libraries are expected in in `lib64/` instead of `lib/`
-if [[ "$PLATFORM" == "linux" ]]; then
-  LIB_SUFFIX="64"
-fi
 # Copy libs
 find deps/skia/out/Release \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
 find deps/freetype/build \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
-find deps/brotli/out/installed/lib${LIB_SUFFIX} \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
+find deps/brotli/out/installed/lib \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
 find deps/harfbuzz/build \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
 
 # Compress
