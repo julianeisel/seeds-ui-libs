@@ -55,6 +55,7 @@ else
 fi
 
 # --- Build Brotli (dependency of FreeType) ---
+echo ""
 echo "- Building Brotli..."
 if [ ! -d "brotli" ]; then
   git clone --branch ${BROTLI_VERSION_TAG} --depth=1 https://github.com/google/brotli.git
@@ -63,10 +64,10 @@ cd brotli
 cmake -B out -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=./out/installed
 cmake --build out --config Release --target install
 echo "- Finished building Brotli"
-echo ""
 cd ..
 
 # --- Build FreeType ---
+echo ""
 echo "- Building FreeType..."
 if [ ! -d "freetype" ]; then
     git clone --branch ${FREETYPE_VERSION_TAG} --depth=1 https://gitlab.freedesktop.org/freetype/freetype.git
@@ -77,10 +78,10 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
       -DBROTLIDEC_LIBRARIES="${BROTLIDEC_LIB}"
 cmake --build build --config Release
 echo "- Finished building FreeType"
-echo ""
 cd ..
 
 # --- Build HarfBuzz ---
+echo ""
 echo "- Building HarfBuzz..."
 if [ ! -d "harfbuzz" ]; then
     git clone --branch ${HARFBUZZ_VERSION_TAG} --depth=1 https://github.com/harfbuzz/harfbuzz.git
@@ -95,10 +96,10 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
       -DFREETYPE_LIBRARY="${FREETYPE_LIB}"
 cmake --build build --config Release
 echo "- Finished building HarfBuzz"
-echo ""
 cd ..
 
 # --- Build Skia ---
+echo ""
 echo "- Pulling & Building Skia..."
 if [ ! -d "skia" ]; then
     git clone https://github.com/google/skia.git
@@ -144,6 +145,14 @@ extra_cflags=$EXTRA_CFLAGS
 extra_cflags_cc=[\"-std=c++20\"]
 extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
 
+
+if [[ "$PLATFORM" == "linux" ]]; then
+  SKIA_ARGS+="
+skia_use_egl=true
+skia_use_x11=true
+  "
+fi
+
 echo "Building Skia with the following args:"
 echo "${SKIA_ARGS}"
 echo ""
@@ -151,10 +160,10 @@ echo ""
 bin/gn gen out/Release --args="$SKIA_ARGS"
 ninja -C out/Release
 echo "- Finished building Skia"
-echo ""
 cd ../..
 
 # --- Package ---
+echo ""
 echo "Packaging libraries..."
 PKG_DIR="artifacts/seeds-ui-libs-${PLATFORM_FULLNAME}"
 rm -rf "${PKG_DIR}"
@@ -175,10 +184,15 @@ rsync -a  \
 cp -r deps/freetype/include "${PKG_DIR}/include/freetype2"
 cp -r deps/harfbuzz/src "${PKG_DIR}/include/harfbuzz"
 
+LIB_SUFFIX=""
+# On Linux x64, libraries are expected in in `lib64/` instead of `lib/`
+if [[ "$PLATFORM" == "linux" ]]; then
+  LIB_SUFFIX="64"
+fi
 # Copy libs
 find deps/skia/out/Release \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
 find deps/freetype/build \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
-find deps/brotli/out/installed/lib \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
+find deps/brotli/out/installed/lib${LIB_SUFFIX} \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
 find deps/harfbuzz/build \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
 
 # Compress
