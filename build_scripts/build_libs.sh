@@ -6,10 +6,10 @@ set -e
 # =====================================================
 
 # --- Versions (pin exact commits/tags) ---
-SKIA_VERSION_TAG="chrome/m143"
+SKIA_VERSION_TAG="chrome/m146"
 FREETYPE_VERSION_TAG="VER-2-14-1"
 BROTLI_VERSION_TAG="v1.2.0"
-HARFBUZZ_VERSION_TAG="12.0.0"
+HARFBUZZ_VERSION_TAG="12.3.2"
 
 # Detect platform
 case "$(uname -s)" in
@@ -129,6 +129,7 @@ SKIA_ARGS="
   is_official_build=true
   is_component_build=false
   skia_use_gl=true
+  skia_enable_ganesh=true
   skia_enable_tools=false
   skia_use_freetype=true
   skia_use_harfbuzz=true
