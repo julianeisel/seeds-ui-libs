@@ -10,7 +10,8 @@ SKIA_VERSION_TAG="chrome/m146"
 EXPAT_VERSION_TAG="R_2_7_4"
 FREETYPE_VERSION_TAG="VER-2-14-2"
 BROTLI_VERSION_TAG="v1.2.0"
-BZIP_VERSION_TAG="bzip2-1.0.8"
+# Looks like bzip isn't making releases anymore.
+# BZIP_VERSION_TAG="bzip2-1.0.8"
 HARFBUZZ_VERSION_TAG="12.3.2"
 ZLIB_VERSION_TAG="v1.3.2"
 LIBPNG_VERSION_TAG="v1.6.55"
@@ -108,7 +109,7 @@ cd ..
 echo ""
 echo "- Building Bzip2..."
 if [ ! -d bzip2 ]; then
-  git clone --branch ${BZIP_VERSION_TAG} --depth=1 https://github.com/libarchive/bzip2.git
+  git clone --depth=1 https://gitlab.com/bzip2/bzip2.git
 fi
 cd bzip2
 build_and_install \
