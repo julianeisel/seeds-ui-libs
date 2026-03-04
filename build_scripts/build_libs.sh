@@ -81,7 +81,12 @@ if [ ! -d zlib ]; then
   git clone --branch ${ZLIB_VERSION_TAG} --depth=1 https://github.com/madler/zlib.git
 fi
 cd zlib
-build_and_install
+build_and_install \
+  -DZLIB_BUILD_TESTING=OFF \
+  -DZLIB_BUILD_SHARED=OFF
+if [[ "$PLATFORM" == "win" ]]; then
+  mv ../install/lib/zs.lib ../install/lib/z.lib
+fi
 echo "- Finished building zlib"
 cd ..
 
@@ -100,6 +105,9 @@ build_and_install \
   -DPNG_TESTS=OFF \
   -DPNG_EXECUTABLES=OFF \
   -DPNG_SHARED=OFF
+if [[ "$PLATFORM" == "win" ]]; then
+  mv ../install/lib/libpng16_static.lib ../install/lib/png.lib
+fi
 echo "- Finished building libpng"
 cd ..
 
@@ -116,6 +124,9 @@ build_and_install \
   -DENABLE_LIB_ONLY=ON \
   -DENABLE_SHARED_LIB=OFF \
   -DENABLE_STATIC_LIB=ON
+if [[ "$PLATFORM" == "win" ]]; then
+  mv ../install/lib/bz2_static.lib ../install/lib/bz2.lib
+fi
 echo "- Finished building Bzip2"
 cd ..
 
