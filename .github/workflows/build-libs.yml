@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag for release (e.g. 0.1.1)'
+        description: "Version tag for release (e.g. 0.1.1)"
         required: true
 
 jobs:
@@ -17,6 +17,7 @@ jobs:
           - { os: ubuntu-latest, label: linux-x64 }
           - { os: macos-15, label: macos-arm64 }
           - { os: macos-15-intel, label: macos-15-intel }
+          - { os: windows-2022, label: windows-2022 }
 
     steps:
       - name: Checkout repository
@@ -31,7 +32,7 @@ jobs:
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             brew install ninja cmake python3 pkg-config
           else
-            choco install ninja cmake python
+            choco install ninja cmake python rsync
           fi
 
       - name: Build libraries
@@ -112,4 +113,3 @@ jobs:
             release_artifacts/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
