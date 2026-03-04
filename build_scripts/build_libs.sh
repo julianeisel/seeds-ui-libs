@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 set -e
 
-# =====================================================
-# Build Skia + FreeType + HarfBuzz prebuilt libraries
-# =====================================================
+# ======================================================
+# Fully Static Skia, Freetype & HarfBuzz Toolchain Build
+# ======================================================
 
-# --- Versions (pin exact commits/tags) ---
+# ---------- Versions ----------
 SKIA_VERSION_TAG="chrome/m146"
-FREETYPE_VERSION_TAG="VER-2-14-1"
+EXPAT_VERSION_TAG="R_2_7_4"
+FREETYPE_VERSION_TAG="VER-2-14-2"
 BROTLI_VERSION_TAG="v1.2.0"
+BZIP_VERSION_TAG="bzip2-1.0.8"
 HARFBUZZ_VERSION_TAG="12.3.2"
+ZLIB_VERSION_TAG="v1.3.2"
+LIBPNG_VERSION_TAG="v1.6.55"
 
-# Detect platform
+# ---------- Platform Detection ----------
 case "$(uname -s)" in
     Linux*)   PLATFORM="linux" ;;
     Darwin*)  PLATFORM="mac" ;;
@@ -26,132 +30,227 @@ case "$ARCH_FULLNAME" in
     *)        ARCH="x64" ;;
 esac
 
-PLATFORM_FULLNAME="${PLATFORM}-$ARCH"
+PLATFORM_FULLNAME="${PLATFORM}-${ARCH}"
 
 echo "=== Building libraries for ${PLATFORM_FULLNAME} ==="
 echo "Using:"
-echo "  Skia: ${SKIA_VERSION_TAG}"
-echo "  FreeType: ${FREETYPE_VERSION_TAG}"
+echo "  zlib: ${ZLIB_VERSION_TAG}"
+echo "  libpng: ${LIBPNG_VERSION_TAG}"
 echo "  Brotli: ${BROTLI_VERSION_TAG}"
+echo "  FreeType: ${FREETYPE_VERSION_TAG}"
 echo "  HarfBuzz: ${HARFBUZZ_VERSION_TAG}"
+echo "  Expat: ${EXPAT_VERSION_TAG}"
+echo "  Skia: ${SKIA_VERSION_TAG}"
 
 mkdir -p deps && cd deps
-
 if [[ "$PLATFORM" == "win" ]]; then
-    # Convert to Windows absolute paths (C:/... style)
-    FREETYPE_INCLUDE=$(cygpath -m "$(pwd)/freetype/include")
-    BROTLI_INCLUDE=$(cygpath -m "$(pwd)/brotli/out/installed/include")
-    HARFBUZZ_INCLUDE=$(cygpath -m "$(pwd)/harfbuzz/src")
-    FREETYPE_LIB=$(cygpath -m "$(pwd)/freetype/build/Release/freetype.lib")
-    BROTLIDEC_LIB=$(cygpath -m "$(pwd)/brotli/out/installed/lib/Release/brotlidec.lib")
-    HARFBUZZ_LIB=$(cygpath -m "$(pwd)/harfbuzz/build/Release/harfbuzz.lib")
+  INSTALL_PREFIX=$(cygpath -m "$(pwd)/install")
 else
-    FREETYPE_INCLUDE="$(pwd)/freetype/include"
-    BROTLI_INCLUDE="$(pwd)/brotli/out/installed/include"
-    HARFBUZZ_INCLUDE="$(pwd)/harfbuzz/src"
-    FREETYPE_LIB="$(pwd)/freetype/build/libfreetype.a"
-    BROTLIDEC_LIB="$(pwd)/brotli/out/installed/lib/libbrotlidec.a"
-    HARFBUZZ_LIB="$(pwd)/harfbuzz/build/libharfbuzz.a"
+  INSTALL_PREFIX=$(pwd)/install
 fi
+mkdir -p "$INSTALL_PREFIX"
 
-# --- Build Brotli (dependency of FreeType) ---
+build_and_install () {
+  if [[ "$PLATFORM" == "win" ]]; then
+    cmake -B build \
+      -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
+      -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded \
+      "$@"
+    cmake --build build --config Release --parallel
+    cmake --install build --config Release
+  else
+    cmake -B build \
+      -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=OFF \
+      "$@"
+    cmake --build build --parallel
+    cmake --install build
+  fi
+}
+
+# =====================================================
+# zlib
+# =====================================================
+echo ""
+echo "- Building zlib..."
+if [ ! -d zlib ]; then
+  git clone --branch ${ZLIB_VERSION_TAG} --depth=1 https://github.com/madler/zlib.git
+fi
+cd zlib
+build_and_install
+echo "- Finished building zlib"
+cd ..
+
+# =====================================================
+# libpng
+# =====================================================
+echo ""
+echo "- Building libpng..."
+if [ ! -d libpng ]; then
+  git clone --branch ${LIBPNG_VERSION_TAG} --depth=1 https://github.com/glennrp/libpng.git
+fi
+cd libpng
+build_and_install \
+  -DCMAKE_PREFIX_PATH="$INSTALL_PREFIX" \
+  -DPNG_TOOLS=OFF\
+  -DPNG_TESTS=OFF \
+  -DPNG_EXECUTABLES=OFF \
+  -DPNG_SHARED=OFF
+echo "- Finished building libpng"
+cd ..
+
+# =====================================================
+# bzip2
+# =====================================================
+echo ""
+echo "- Building Bzip2..."
+if [ ! -d bzip2 ]; then
+  git clone --branch ${BZIP_VERSION_TAG} --depth=1 https://github.com/libarchive/bzip2.git
+fi
+cd bzip2
+build_and_install \
+  -DENABLE_LIB_ONLY=ON \
+  -DENABLE_SHARED_LIB=OFF \
+  -DENABLE_STATIC_LIB=ON
+echo "- Finished building Bzip2"
+cd ..
+
+# =====================================================
+# Brotli
+# =====================================================
 echo ""
 echo "- Building Brotli..."
-if [ ! -d "brotli" ]; then
+if [ ! -d brotli ]; then
   git clone --branch ${BROTLI_VERSION_TAG} --depth=1 https://github.com/google/brotli.git
 fi
 cd brotli
-cmake -B out -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=./out/installed -DCMAKE_INSTALL_LIBDIR=lib
-cmake --build out --config Release --target install
+build_and_install -DBROTLI_DISABLE_TESTS=ON
 echo "- Finished building Brotli"
 cd ..
 
-# --- Build FreeType ---
+# =====================================================
+# FreeType
+# =====================================================
 echo ""
 echo "- Building FreeType..."
-if [ ! -d "freetype" ]; then
-    git clone --branch ${FREETYPE_VERSION_TAG} --depth=1 https://gitlab.freedesktop.org/freetype/freetype.git
+if [ ! -d freetype ]; then
+  git clone --branch ${FREETYPE_VERSION_TAG} --depth=1 https://gitlab.freedesktop.org/freetype/freetype.git
 fi
 cd freetype
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
-      -DBROTLIDEC_INCLUDE_DIRS="${BROTLI_INCLUDE}" \
-      -DBROTLIDEC_LIBRARIES="${BROTLIDEC_LIB}"
-cmake --build build --config Release
+
+build_and_install \
+  -DCMAKE_PREFIX_PATH="$INSTALL_PREFIX" \
+  -DFT_REQUIRE_ZLIB=TRUE \
+  -DFT_REQUIRE_PNG=TRUE \
+  -DFT_REQUIRE_BZIP2=TRUE \
+  -DFT_REQUIRE_BROTLI=TRUE
 echo "- Finished building FreeType"
 cd ..
 
-# --- Build HarfBuzz ---
+# =====================================================
+# HarfBuzz
+# =====================================================
 echo ""
 echo "- Building HarfBuzz..."
-if [ ! -d "harfbuzz" ]; then
-    git clone --branch ${HARFBUZZ_VERSION_TAG} --depth=1 https://github.com/harfbuzz/harfbuzz.git
+if [ ! -d harfbuzz ]; then
+  git clone --branch ${HARFBUZZ_VERSION_TAG} --depth=1 https://github.com/harfbuzz/harfbuzz.git
 fi
 cd harfbuzz
-
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
-      -DCMAKE_CXX_STANDARD=20 \
-      -DCMAKE_CXX_STANDARD_REQUIRED=ON \
-      -DHB_HAVE_FREETYPE=ON \
-      -DFREETYPE_INCLUDE_DIRS=${FREETYPE_INCLUDE} \
-      -DFREETYPE_LIBRARY="${FREETYPE_LIB}"
-cmake --build build --config Release
+build_and_install \
+  -DHB_HAVE_FREETYPE=ON
 echo "- Finished building HarfBuzz"
 cd ..
 
-# --- Build Skia ---
+# =====================================================
+# Expat
+# =====================================================
 echo ""
-echo "- Pulling & Building Skia..."
-if [ ! -d "skia" ]; then
-    git clone https://github.com/google/skia.git
-    cd skia
-else
-    cd skia
-    git fetch origin ${SKIA_VERSION_TAG}
+echo "- Building Expat..."
+if [ ! -d libexpat ]; then
+  git clone --branch ${EXPAT_VERSION_TAG} --depth=1 https://github.com/libexpat/libexpat.git
 fi
+cd libexpat/expat
+build_and_install \
+  -DEXPAT_MSVC_STATIC_CRT=ON \
+  -DEXPAT_SHARED_LIBS=OFF \
+  -DEXPAT_BUILD_TESTS=OFF \
+  -DEXPAT_BUILD_TOOLS=OFF \
+  -DEXPAT_BUILD_EXAMPLES=OFF
+echo "- Finished building Expat"
+cd ../..
+
+# =====================================================
+# Skia
+# =====================================================
+echo ""
+echo "- Building Skia..."
+if [ ! -d skia ]; then
+  git clone https://github.com/google/skia.git
+fi
+cd skia
 git checkout ${SKIA_VERSION_TAG}
 python3 tools/git-sync-deps
 
 if [[ "$PLATFORM" == "win" ]]; then
-    EXTRA_CFLAGS="[
-        \"-DSK_FREETYPE_STATIC\",
-        \"-DSK_BUILD_FOR_WIN\",
-        \"-I$FREETYPE_INCLUDE\",
-        \"-I$HARFBUZZ_INCLUDE\"
-    ]"
+  # `SK_FREETYPE_MINIMUM_RUNTIME_VERSION=0` is a workaround for a build error on Windows. Without
+  # it Skia tries to include the dlfcn.h Unix header.
+  SKIA_EXTRA_CFLAGS="[
+    \"-I$INSTALL_PREFIX/include\",
+    \"-I$INSTALL_PREFIX/include/freetype2\",
+    \"-I$INSTALL_PREFIX/include/harfbuzz\",
+    \"-DSK_BUILD_FOR_WIN\",
+    \"-DSK_FREETYPE_STATIC\",
+    \"-DSK_FREETYPE_MINIMUM_RUNTIME_VERSION=0\"
+  ]"
+  SKIA_EXTRA_LDFLAGS="[
+    \"/LIBPATH:$INSTALL_PREFIX/lib\",
+    \"freetype.lib\",
+    \"harfbuzz.lib\",
+    \"zlibstatic.lib\",
+    \"libpng16_static.lib\",
+    \"bz2.lib\",
+    \"brotlidec.lib\"
+  ]"
 else
-    EXTRA_CFLAGS="[
-        \"-I$FREETYPE_INCLUDE\",
-        \"-I$HARFBUZZ_INCLUDE\"
-    ]"
+  SKIA_EXTRA_CFLAGS="[
+    \"-I$INSTALL_PREFIX/include\",
+    \"-I$INSTALL_PREFIX/include/freetype2\",
+    \"-I$INSTALL_PREFIX/include/harfbuzz\"
+  ]"
+  SKIA_EXTRA_LDFLAGS="[
+    \"-L$INSTALL_PREFIX/lib\"
+  ]"
 fi
 
+
 SKIA_ARGS="
-  is_official_build=true
-  is_component_build=false
-  skia_use_gl=true
-  skia_enable_ganesh=true
-  skia_enable_tools=false
-  skia_use_freetype=true
-  skia_use_harfbuzz=true
-  skia_use_zlib=true
-  skia_use_system_libpng=false
-  skia_enable_pdf=false
-  skia_use_system_libjpeg_turbo=false
-  skia_use_system_libwebp=false
-  skia_use_system_icu=false
-  skia_enable_fontmgr_android=false
-  target_os=\"${PLATFORM}\"
-  target_cpu=\"${ARCH}\"
-  extra_cflags=$EXTRA_CFLAGS
-  extra_cflags_cc=[\"-std=c++20\"]
-  extra_ldflags=[\"$FREETYPE_LIB\",\"$HARFBUZZ_LIB\"]"
-
-
+is_official_build=true
+is_component_build=false
+skia_use_gl=true
+skia_enable_ganesh=true
+skia_enable_tools=false
+skia_enable_pdf=false
+skia_enable_fontmgr_android=false
+skia_use_freetype=true
+skia_use_harfbuzz=true
+skia_use_system_zlib=true
+skia_use_system_libpng=true
+skia_use_system_libjpeg_turbo=false
+skia_use_system_libwebp=false
+skia_use_system_icu=false
+target_os=\"${PLATFORM}\"
+target_cpu=\"${ARCH}\"
+extra_cflags=$SKIA_EXTRA_CFLAGS
+extra_ldflags=$SKIA_EXTRA_LDFLAGS
+"
 if [[ "$PLATFORM" == "linux" ]]; then
   SKIA_ARGS+="
-  skia_use_egl=true
-  skia_use_x11=true
-  "
+skia_use_egl=true
+skia_use_x11=true
+"
 fi
 
 echo "Building Skia with the following args:"
@@ -182,18 +281,14 @@ rsync -a  \
     --include='*.h*' \
     --exclude='*' \
         deps/skia/modules/ "${PKG_DIR}/skia/modules"
-cp -r deps/freetype/include "${PKG_DIR}/include/freetype2"
-cp -r deps/harfbuzz/src "${PKG_DIR}/include/harfbuzz"
 
 # Copy libs
 find deps/skia/out/Release \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
-find deps/freetype/build \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
-find deps/brotli/out/installed/lib \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
-find deps/harfbuzz/build \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
+find deps/install/lib \( -name "lib*.a" -or -name "*.lib" \) -exec cp {} "${PKG_DIR}/lib/" \;
 
 # Compress
 if [[ "$PLATFORM" == "win" ]]; then
-    7z a ${PKG_DIR}.zip ${PKG_DIR}/*
+    7z a ${PKG_DIR}.zip ./${PKG_DIR}/*
 else
     tar -czf ${PKG_DIR}.tar.gz -C artifacts seeds-ui-libs-${PLATFORM_FULLNAME}
 fi
