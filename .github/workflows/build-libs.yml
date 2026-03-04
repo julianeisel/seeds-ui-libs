@@ -59,9 +59,9 @@ jobs:
         shell: pwsh
         run: |
           Set-Location artifacts
-          Get-ChildItem -Filter "seeds-ui-libs-*" | ForEach-Object {
+          Get-ChildItem -Filter "seeds-ui-libs-*" -File | ForEach-Object {
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
-            "$hash  $($_.Name)" | Out-File -Append SHA256SUMS.txt
+            "{0}  {1}" -f $hash, $_.Name | Out-File -Append -Encoding ascii SHA256SUMS.txt
           }
           Get-Content SHA256SUMS.txt
 
